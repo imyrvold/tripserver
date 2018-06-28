@@ -14,4 +14,7 @@ public func routes(_ router: Router) throws {
     let purposesController = PurposesController()
     try router.register(collection: purposesController)
 
+    let websiteController = WebsiteController()
+    try router.register(collection: websiteController)
+    
 }

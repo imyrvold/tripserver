@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>#(title) | Purposes</title>
+</head>
+<body>
+  <h1>Purposes</h1>
+  #if(purposes) {
+    <table>
+      <thead>
+        <tr>
+          <th>Default Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        #for(purpose in purposes) {
+          <tr>
+            <td>#(purpose.defaultPurpose)</td>
+          </tr>
+          <table>
+            <thead>
+              <th>Purposes</th>
+            </thead>
+            <tbody>
+              #for(purposeStr in purpose.purposes) {
+                <tr>
+                  <td>#(purposeStr)</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </tbody>
+    </table>
+      
+  } else {
+    <h2> There aren't any purposes yet!</h2>
+  }
+</body>
+</html>
