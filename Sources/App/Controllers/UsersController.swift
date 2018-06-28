@@ -41,6 +41,8 @@ struct  UsersController: RouteCollection {
     }
 
     func updateHandler(_ req: Request) throws -> Future<User> {
+        print("updateHandler")
+        
         return try flatMap(to: User.self, req.parameters.next(User.self), req.content.decode(User.self)) { user, updatedUser in
             user.userId = updatedUser.userId
             user.userName = updatedUser.userName
