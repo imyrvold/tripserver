@@ -5,7 +5,6 @@ import Fluent
 struct  UsersController: RouteCollection {
     func boot(router: Router) throws {
         let usersRoutes = router.grouped("api", "users")
-        usersRoutes.post(User.self, use: createHandler)
         usersRoutes.get(use: getAllHandler)
         usersRoutes.get(User.parameter, use: getHandler)
         usersRoutes.put(User.parameter, use: updateHandler)
@@ -18,6 +17,11 @@ struct  UsersController: RouteCollection {
         let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
         let basicAuthGroup = usersRoutes.grouped(basicAuthMiddleware)
         basicAuthGroup.post("login", use: loginHandler)
+
+        let tokenAuthMiddleware = User.tokenAuthMiddleware()
+        let guardAuthMiddleware = User.guardAuthMiddleware()
+        let tokenAuthGroup = usersRoutes.grouped( tokenAuthMiddleware, guardAuthMiddleware)
+        tokenAuthGroup.post(User.self, use: createHandler)
     }
 
     func createHandler(_ req: Request, user: User) throws -> Future<User.Public> {

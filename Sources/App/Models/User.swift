@@ -113,11 +113,6 @@ final class User: Codable {
     }
 }
 
-// extension User: Model {
-//     typealias Database = PostgreSQLDatabase
-//     typealias ID = Int
-//     public static var idKey: IDKey = \User.userId
-// }
 extension User: PostgreSQLUUIDModel {}
 extension User: Migration {
     static func prepare(on connection: PostgreSQLConnection) -> Future<Void> {
@@ -150,10 +145,6 @@ extension User: BasicAuthenticatable {
 extension User: TokenAuthenticatable {
     typealias TokenType = Token
 }
-
-// extension User: Content {}
-// extension User: Parameter {}
-// extension User: Migration {}
 
 extension User {
     var purposes: Children<User, Purpose> {

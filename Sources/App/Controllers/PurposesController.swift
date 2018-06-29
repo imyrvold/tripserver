@@ -1,23 +1,34 @@
  import Vapor
  import Fluent
+ import Authentication
 
  struct PurposesController: RouteCollection {
      func boot(router: Router) throws {
         let purposesRoutes = router.grouped("api", "purposes")
         purposesRoutes.get(use: getAllHandler)
-        purposesRoutes.post(Purpose.self, use: createHandler)
         purposesRoutes.get(Purpose.parameter, use: getHandler)
-        purposesRoutes.put(Purpose.parameter, use: updateHandler)
-        purposesRoutes.delete(Purpose.parameter, use: deleteHandler)
         // purposesRoutes.get("search", use: searchHandler)
         // purposesRoutes.get("first", use: getFirstHandler)
         // purposesRoutes.get("sorted", use: sortedHandler)
         purposesRoutes.get(Purpose.parameter, "user", use: getUserHandler)
         // purposesRoutes.post(Purpose.parameter, "categories", Category.parameter, use: addCategoriesHandler)
         // purposesRoutes.get(Purpose.parameter, "categories", use: getCategoriesHandler)
+
+        let tokenAuthMiddleware = User.tokenAuthMiddleware()
+        let guardAuthMiddleware = User.guardAuthMiddleware()
+        let tokenAuthGroup = purposesRoutes.grouped (tokenAuthMiddleware, guardAuthMiddleware)
+        tokenAuthGroup.post(PurposeCreateData.self, use: createHandler)
+        tokenAuthGroup.delete(Purpose.parameter, use: deleteHandler)
+        tokenAuthGroup.put(Purpose.parameter, use: updateHandler)
      }
 
-    func createHandler(_ req: Request, purpose: Purpose) throws -> Future<Purpose> {
+    func createHandler(_ req: Request, data: PurposeCreateData) throws -> Future<Purpose> {
+        let user = try req.requireAuthenticated(User.self)
+        let purpose = try Purpose(
+            defaultPurpose: data.defaultPurpose,
+            purposes: data.purposes,
+            userID: user.requireID()
+        )
         return purpose.save(on: req)
     }
 
@@ -26,10 +37,12 @@
     }
 
     func updateHandler(_ req: Request) throws -> Future<Purpose> {
-        return try flatMap(to: Purpose.self, req.parameters.next(Purpose.self),req.content.decode(Purpose.self)) { purpose, updatedPurpose in
-            purpose.defaultPurpose = updatedPurpose.defaultPurpose
-            purpose.purposes = updatedPurpose.purposes
-            purpose.userID = updatedPurpose.userID
+        return try flatMap(to: Purpose.self, req.parameters.next(Purpose.self), req.content.decode(PurposeCreateData.self)) { purpose, updateData in
+            purpose.defaultPurpose = updateData.defaultPurpose
+            purpose.purposes = updateData.purposes
+
+            let user = try req.requireAuthenticated(User.self)
+            purpose.userID = try user.requireID()
             return purpose.save(on: req)
         }
     }
@@ -62,10 +75,10 @@
     //             .all()
     // }
 
-    func getUserHandler(_ req: Request) throws -> Future<User> {
+    func getUserHandler(_ req: Request) throws -> Future<User.Public> {
         return try req.parameters.next(Purpose.self)
-                .flatMap(to: User.self) { purpose in
-                    purpose.user.get(on: req)
+                .flatMap(to: User.Public.self) { purpose in
+                    purpose.user.get(on: req).convertToPublic()
                 }
     }
 
@@ -87,4 +100,9 @@
     //             }
     // }
 
+ }
+
+ struct PurposeCreateData: Content {
+     let defaultPurpose: String
+     let purposes: [String]
  }
