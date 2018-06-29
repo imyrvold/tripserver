@@ -151,3 +151,20 @@ extension User {
         return children(\.userID)
     }
 }
+
+struct AdminUser: Migration {
+    typealias Database = PostgreSQLDatabase
+
+    static func prepare(on connection: PostgreSQLConnection) -> Future<Void> {
+        let password = try? BCrypt.hash("password")
+        guard let hashedPassword = password else { fatalError("Failed to create admin user") }
+        
+        let user = User(userName: "admin", appTracking: false, attestationBy: nil, bankAccountNumber: nil, country: "NO", currency: "NOK", distanceUnit: "km", email: "admin@company.no", fullName: "Admin", locale: "nb-NO", mobilePhone: nil, privateAddress: nil, taxDomicile: nil, title: nil, countryCode: 47, employeeNumber: nil, dateForFirstTrip: Date(), privateDays: 0, privateLocalizedDistance: 0.0, privateTrips: 0, password: hashedPassword)
+        return user.save(on: connection).transform(to: ())
+    }
+
+    static func revert(on connection: PostgreSQLConnection) -> Future<Void> {
+        return .done(on: connection)
+    }
+
+}
